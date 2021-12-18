@@ -27,8 +27,12 @@ cursor = "1.0.0"
 
 ---
 
-# [Example](https://github.com/just-do-halee/cursor/tree/main/examples/basic.rs)
+# [Example](https://github.com/just-do-halee/cursor/tree/main/examples)
 
+```rust
+use cursor::*;
+```
+---
 ```rust
 fn example7() -> u8 {
 
@@ -38,6 +42,19 @@ fn example7() -> u8 {
     cursor += 1;
 
     cursor.current_deref()
+
+}
+```
+---
+```rust
+fn example9() {
+
+    let mut cursor = StrCursor::new("test입니다. ^^");
+    cursor += 5;
+
+    assert_eq!(cursor.as_preserved_str(), "test입");
+    assert_eq!(cursor.current(), '니');
+    assert_eq!(cursor.as_remaining_str(), "다. ^^");
 
 }
 ```

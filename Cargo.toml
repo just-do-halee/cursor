@@ -10,7 +10,7 @@ description = "A more free Rust-Iterator."
 
 readme = "README.md"
 
-keywords = ["cursor", "iter", "iterator", "data-structure"]
+keywords = ["cursor", "pointer", "iter", "iterator", "data-structure"]
 categories = ["algorithms", "rust-patterns"]
 
 license = "MIT OR Apache-2.0"
