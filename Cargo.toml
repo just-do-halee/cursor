@@ -1,0 +1,19 @@
+[package]
+name = "cursor"
+version = "1.0.0"
+authors = ["just-do-halee <just.do.halee@gmail.com>"]
+homepage = "https://github.com/just-do-halee/cursor"
+repository = "https://github.com/just-do-halee/cursor"
+documentation = "https://docs.rs/cursor"
+
+description = "A more free Rust-Iterator."
+
+readme = "README.md"
+
+keywords = ["cursor", "iter", "iterator", "data-structure"]
+categories = ["algorithms", "rust-patterns"]
+
+license = "MIT OR Apache-2.0"
+edition = "2021"
+
+[dependencies]
