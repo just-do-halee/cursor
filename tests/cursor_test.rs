@@ -1,8 +1,28 @@
 // Copyright 2021 Hwakyeom Kim(=just-do-halee)
 
-use cursor::{Cursor, CursorTrait};
+use cursor::*;
 
 const SLICE: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+#[derive(Debug, Default)]
+struct EvenCounter(pub usize);
+
+impl Extras<u8> for EvenCounter {
+    fn new() -> Self {
+        EvenCounter::default()
+    }
+    fn clone(&self) -> Self {
+        EvenCounter(self.0)
+    }
+    fn reset(&mut self) {
+        self.0 = 0;
+    }
+    fn change(&mut self, input: &u8) {
+        if input % 2 == 0 {
+            self.0 += 1;
+        }
+    }
+}
 
 #[test]
 fn it_works() {
@@ -134,4 +154,11 @@ fn save_load_works() {
     assert_eq!(*cursor.current(), 2);
 
     assert_eq!(cursor.load_slice(), &[2, 3, 4, 5]);
+}
+
+#[test]
+fn extras_works() {
+    let mut cursor = Cursor::new_with_extras::<EvenCounter>(SLICE);
+    cursor.next_to_last();
+    assert_eq!(cursor.into_extras().0, 5);
 }

@@ -18,16 +18,16 @@ A more free Rust-Iterator.
 [twitter-url]: https://twitter.com/do_halee
 [crates-url]: https://crates.io/crates/cursor
 [license-url]: https://github.com/just-do-halee/cursor
-| [Examples](https://github.com/just-do-halee/cursor/tree/main/examples) | [Docs](https://docs.rs/cursor) | [Latest Note](https://github.com/just-do-halee/cursor/blob/main/CHANGELOG.md) |
+| [Examples](./examples) | [Docs](https://docs.rs/cursor) | [Latest Note](./CHANGELOG.md) |
 
 ```toml
 [dependencies]
-cursor = "1.0.0"
+cursor = "1.1.0"
 ```
 
 ---
 
-# [Example](https://github.com/just-do-halee/cursor/tree/main/examples)
+# [Example](./examples)
 
 ```rust
 use cursor::*;
@@ -58,3 +58,5 @@ fn example9() {
 
 }
 ```
+
+#### *Please check the [examples folder](./examples) for detailed features. There are more than you can imagine.*

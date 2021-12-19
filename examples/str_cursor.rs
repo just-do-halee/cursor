@@ -12,6 +12,7 @@ fn main() {
     example7();
     example8();
     example9();
+    println!();
 }
 
 #[inline]
@@ -42,7 +43,6 @@ fn example3() {
 #[inline]
 fn example4() {
     let mut cursor = StrCursor::new("test ascii only!");
-
     for _ in cursor.raw_range() {
         cursor += 1;
         print!("{} ", cursor.current());
@@ -52,7 +52,6 @@ fn example4() {
 #[inline]
 fn example5() {
     let mut cursor = StrCursor::new("test ascii only!");
-
     for _ in cursor.raw_range() {
         let i = &mut cursor + 1;
         print!("{} ", i.unwrap());

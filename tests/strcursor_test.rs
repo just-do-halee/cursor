@@ -1,8 +1,28 @@
 // Copyright 2021 Hwakyeom Kim(=just-do-halee)
 
-use cursor::StrCursor;
+use cursor::*;
 
 const STRING: &str = "this is test. 안녕하세요. 이것은 #&*@( 테스트입니다. ^^ thanks.";
+
+#[derive(Debug, Default)]
+struct SpaceCounter(pub usize);
+
+impl Extras<char> for SpaceCounter {
+    fn new() -> Self {
+        SpaceCounter::default()
+    }
+    fn clone(&self) -> Self {
+        SpaceCounter(self.0)
+    }
+    fn reset(&mut self) {
+        self.0 = 0;
+    }
+    fn change(&mut self, input: &char) {
+        if *input == ' ' {
+            self.0 += 1;
+        }
+    }
+}
 
 #[test]
 fn it_works() {
@@ -20,11 +40,6 @@ fn it_works2() {
     while let Some(ch) = cursor.next() {
         assert_eq!(ch, chars[cursor.pos()]);
     }
-}
-
-#[test]
-fn const_works() {
-    assert_eq!(StrCursor::EOF, '\0');
 }
 
 #[test]
@@ -160,4 +175,11 @@ fn save_load_works() {
     cursor -= 2;
 
     assert_eq!(cursor.load_str(), "테스트");
+}
+
+#[test]
+fn extras_works() {
+    let mut cursor = StrCursor::new_with_extras::<SpaceCounter>(STRING);
+    cursor.next_to_last();
+    assert_eq!(cursor.into_extras().0, 8);
 }

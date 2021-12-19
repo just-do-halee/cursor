@@ -12,6 +12,7 @@ fn main() {
     example7();
     example8();
     example9();
+    println!();
 }
 
 #[inline]

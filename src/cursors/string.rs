@@ -2,29 +2,92 @@
 
 use super::{utf::*, *};
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct StrCursor<'s> {
-    cursor: Cursor<'s, u8>,
+#[derive(PartialEq, Eq, Clone)]
+pub struct StrCursor<'s, E: Extras<char> = NoneExtras<char>> {
+    cursor: Cursor<'s, u8, NoneExtras<u8>>,
     current: char,
     pos: usize,
     times: usize,
     init: bool,
     saved_pos: usize,
+    extras: E,
 }
 
-impl<'s> StrCursor<'s> {
-    pub const EOF: char = '\0';
+impl<E: Extras<char>> fmt::Debug for StrCursor<'_, E> {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("StrCursor")
+            .field(&self.as_preserved_str())
+            .field(&self.current())
+            .field(&self.as_remaining_str())
+            .finish()
+    }
+}
 
+impl<E: Extras<char>> ToExtras<E> for StrCursor<'_, E> {
+    type Input = char;
+    #[inline]
+    fn to_extras(&self) -> E {
+        self.extras.clone()
+    }
+}
+
+/// this will reset the newer cursor
+impl<E: Extras<char>> ToCursor<u8> for StrCursor<'_, E> {}
+
+impl<E: Extras<char>> AsRef<[u8]> for StrCursor<'_, E> {
+    #[inline]
+    fn as_ref(&self) -> &[u8] {
+        self.as_slice()
+    }
+}
+
+const EOF: char = '\0';
+
+impl<'s> StrCursor<'s, NoneExtras<char>> {
     #[inline]
     pub fn new(string: &'s str) -> Self {
         StrCursor {
             cursor: Cursor::new(string.as_bytes()),
-            current: Self::EOF,
+            current: EOF,
             pos: 0,
             times: 0,
             init: true,
             saved_pos: 0,
+            extras: Extras::new(),
         }
+    }
+}
+
+impl StrCursor<'_, NoneExtras<char>> {
+    #[inline]
+    pub fn new_with_extras<EXTRAS: Extras<char>>(string: &str) -> StrCursor<EXTRAS> {
+        StrCursor {
+            cursor: Cursor::new(string.as_bytes()),
+            current: EOF,
+            pos: 0,
+            times: 0,
+            init: true,
+            saved_pos: 0,
+            extras: Extras::new(),
+        }
+    }
+}
+
+impl<'s, E: Extras<char>> StrCursor<'s, E> {
+    #[inline]
+    pub fn reset(&mut self) {
+        self.cursor.reset();
+        self.current = EOF;
+        self.pos = 0;
+        self.times = 0;
+        self.init = true;
+        self.saved_pos = 0;
+        self.extras.reset();
+    }
+    #[inline]
+    pub fn into_extras(self) -> E {
+        self.extras
     }
     #[inline]
     pub fn raw_range(&self) -> Range<usize> {
@@ -128,6 +191,14 @@ impl<'s> StrCursor<'s> {
         }
     }
     #[inline]
+    fn set_pos(&mut self, pos: usize) {
+        let prev_pos = self.pos;
+        self.pos = pos;
+        if prev_pos != pos {
+            self.extras.change(&self.current());
+        }
+    }
+    #[inline]
     fn bump(&mut self) -> Option<char> {
         let cursor_init = self.cursor.init;
         if !self.init {
@@ -149,9 +220,9 @@ impl<'s> StrCursor<'s> {
         if let Some(v) = out {
             self.current = v;
             match self.backwards() {
-                _ if !cursor_init => {}
-                true => self.pos -= 1,
-                false => self.pos += 1,
+                _ if !cursor_init => self.extras.change(&self.current()),
+                true => self.set_pos(self.pos - 1),
+                false => self.set_pos(self.pos + 1),
             }
         }
         self.times = times;
@@ -185,7 +256,7 @@ impl<'s> StrCursor<'s> {
     #[inline]
     pub fn shift_first(&mut self) {
         self.set_to_left();
-        self.pos = 0;
+        self.set_pos(0);
         self.cursor.shift_first();
     }
     /// This method will call next repeatedly until [None] is encountered
@@ -195,26 +266,36 @@ impl<'s> StrCursor<'s> {
         while self.bump().is_some() {}
     }
     #[inline]
+    pub fn first_to_last(&mut self) {
+        self.set_pos(0);
+        self.cursor.shift_first();
+        self.shift_last()
+    }
+    #[inline]
+    pub fn next_to_last(&mut self) {
+        self.shift_last()
+    }
+    #[inline]
     pub fn unwrapped_next(&mut self) -> char {
         self.next().unwrap()
     }
 }
 
-impl<'s> AsRef<Self> for StrCursor<'s> {
+impl<'s, E: Extras<char>> AsRef<Self> for StrCursor<'s, E> {
     #[inline]
     fn as_ref(&self) -> &Self {
         self
     }
 }
 
-impl<'s> AsMut<Self> for StrCursor<'s> {
+impl<'s, E: Extras<char>> AsMut<Self> for StrCursor<'s, E> {
     #[inline]
     fn as_mut(&mut self) -> &mut Self {
         self
     }
 }
 
-impl<'s> Iterator for StrCursor<'s> {
+impl<'s, E: Extras<char>> Iterator for StrCursor<'s, E> {
     type Item = char;
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
@@ -222,41 +303,47 @@ impl<'s> Iterator for StrCursor<'s> {
     }
 }
 
-impl<'s> AddAssign<usize> for StrCursor<'s> {
+impl<'s, E: Extras<char>> AddAssign<usize> for StrCursor<'s, E> {
+    #[inline]
     fn add_assign(&mut self, rhs: usize) {
         self.right_shift(rhs);
     }
 }
 
-impl<'s> Add<usize> for StrCursor<'s> {
+impl<'s, E: Extras<char>> Add<usize> for StrCursor<'s, E> {
     type Output = Option<char>;
+    #[inline]
     fn add(mut self, rhs: usize) -> Self::Output {
         self.right_shift(rhs)
     }
 }
 
-impl<'s> Add<usize> for &mut StrCursor<'s> {
+impl<'s, E: Extras<char>> Add<usize> for &mut StrCursor<'s, E> {
     type Output = Option<char>;
+    #[inline]
     fn add(self, rhs: usize) -> Self::Output {
         (*self).right_shift(rhs)
     }
 }
 
-impl<'s> SubAssign<usize> for StrCursor<'s> {
+impl<'s, E: Extras<char>> SubAssign<usize> for StrCursor<'s, E> {
+    #[inline]
     fn sub_assign(&mut self, rhs: usize) {
         self.left_shift(rhs);
     }
 }
 
-impl<'s> Sub<usize> for StrCursor<'s> {
+impl<'s, E: Extras<char>> Sub<usize> for StrCursor<'s, E> {
     type Output = Option<char>;
+    #[inline]
     fn sub(mut self, rhs: usize) -> Self::Output {
         self.left_shift(rhs)
     }
 }
 
-impl<'s> Sub<usize> for &mut StrCursor<'s> {
+impl<'s, E: Extras<char>> Sub<usize> for &mut StrCursor<'s, E> {
     type Output = Option<char>;
+    #[inline]
     fn sub(self, rhs: usize) -> Self::Output {
         (*self).left_shift(rhs)
     }

@@ -2,6 +2,8 @@
 
 use super::*;
 
+pub use super::str::from_utf8_unchecked;
+
 const CONT_MASK: u8 = 0b0011_1111;
 
 #[inline]
@@ -48,6 +50,7 @@ pub fn next_code_point<'a, C: CursorTrait<'a, u8>>(cursor: &mut C) -> (Option<u3
 
     (Some(ch), times)
 }
+
 #[inline]
 fn utf8_first_byte(byte: u8, width: u32) -> u32 {
     (byte & (0x7F >> width)) as u32
