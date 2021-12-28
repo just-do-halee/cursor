@@ -4,6 +4,17 @@ use cursor::*;
 
 const STRING: &str = "this is test. 안녕하세요. 이것은 #&*@( 테스트입니다. ^^ thanks.";
 
+// #[test]
+// fn str_works() {
+//     let mut cursor = StrCursor::new(STRING);
+//     assert_eq!((cursor.as_mut() + 3).unwrap(), 's');
+//     cursor -= 2;
+//     assert_eq!(cursor.current(), 'h');
+//     cursor += 8;
+//     assert_eq!(cursor.current(), 'e');
+//     assert_eq!((cursor - 8).unwrap(), 'h');
+// }
+
 #[derive(Debug, Default)]
 struct SpaceCounter(pub usize);
 
@@ -99,26 +110,27 @@ fn shift_works() {
     let chars = STRING.chars().collect::<Vec<char>>();
 
     let mut cursor = StrCursor::new(STRING);
-    let ch = cursor.right_shift(5).unwrap();
+    cursor.next();
+    let ch = cursor.next_to_offset(5).unwrap();
     assert_eq!(ch, chars[5]);
-    let ch = cursor.left_shift(5).unwrap();
+    let ch = cursor.next_to_offset(-5).unwrap();
     assert_eq!(ch, chars[0]);
 
-    cursor.shift_last();
+    assert!(cursor.backwards());
+    cursor.jump_to_last();
+    assert!(cursor.backwards());
 
     let ch = cursor.current();
     assert_eq!(ch, chars[chars.len() - 1]);
 
-    cursor.turnaround();
-
-    let ch = cursor.next().unwrap();
-    assert_eq!(ch, chars[chars.len() - 2]);
+    let ch = cursor.next();
+    assert_eq!(ch, Some(chars[chars.len() - 2]));
 }
 
 #[test]
 fn str_works() {
     let mut cursor = StrCursor::new(STRING);
-    cursor.right_shift(15);
+    cursor.next_to_offset(16);
     assert_eq!(
         format!(
             "{}  {}  {}",
@@ -145,36 +157,41 @@ fn assign_works() {
 
 #[test]
 fn save_load_works() {
-    let mut cursor = StrCursor::new(STRING);
-    cursor.save();
-    assert_eq!(cursor.saved_pos(), 0);
+    {
+        let mut cursor = StrCursor::new(STRING);
+        cursor.save();
+        assert_eq!(cursor.saved().pos, 0);
 
-    cursor += 4;
-    assert_eq!(cursor.current(), ' ');
+        cursor += 4;
+        assert_eq!(cursor.current(), ' ');
+        assert_eq!(cursor.pos(), 4);
 
-    assert_eq!(cursor.load_str(), "this ");
+        assert_eq!(cursor.as_str_loaded(), "this ");
 
-    cursor.save();
-    assert_eq!(cursor.saved_pos(), 4);
+        cursor.save();
+        assert_eq!(cursor.saved().pos, 4);
 
-    cursor -= 2;
-    assert_eq!(cursor.current(), 'i');
+        cursor -= 2;
+        assert_eq!(cursor.current(), 'i');
 
-    assert_eq!(cursor.load_str(), "is ");
+        assert_eq!(cursor.as_str_loaded(), "is ");
+    }
+    {
+        let mut cursor = StrCursor::new("한글테스트^^");
+        cursor.save();
+        assert_eq!(cursor.saved().pos, 0);
 
-    let mut cursor = StrCursor::new("한글테스트^^");
-    cursor.save();
-    assert_eq!(cursor.saved_pos(), 0);
+        cursor += 4;
 
-    cursor += 4;
-    assert_eq!(cursor.current(), '트');
+        assert_eq!(cursor.current(), '트');
 
-    assert_eq!(cursor.load_str(), "한글테스트");
+        assert_eq!(cursor.as_str_loaded(), "한글테스트");
 
-    cursor.save();
-    cursor -= 2;
+        cursor.save();
+        cursor -= 2;
 
-    assert_eq!(cursor.load_str(), "테스트");
+        assert_eq!(cursor.as_str_loaded(), "테스트");
+    }
 }
 
 #[test]

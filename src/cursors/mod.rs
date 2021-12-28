@@ -2,20 +2,18 @@
 
 use super::*;
 
-mod string;
-pub use string::*;
+mod extensions;
+pub use extensions::string::*;
+
+// ---------------------------
 
 #[derive(PartialEq, Eq, Clone)]
 pub struct Cursor<'s, T: 's, E: Extras<T> = NoneExtras<T>> {
     slice: &'s [T],
     len: usize,
-    pos: usize,
-    init: bool,
-    backwards: bool,
-    saved_pos: usize,
-    pub extras: E,
+    info: CursorInfo<T, E>,
+    saved_info: CursorInfo<T, E>,
 }
-
 impl<T: fmt::Debug, E: Extras<T>> fmt::Debug for Cursor<'_, T, E> {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -26,85 +24,97 @@ impl<T: fmt::Debug, E: Extras<T>> fmt::Debug for Cursor<'_, T, E> {
             .finish()
     }
 }
-
 impl<T, E: Extras<T>> ToExtras<E> for Cursor<'_, T, E> {
     type Input = T;
     #[inline]
     fn to_extras(&self) -> E {
-        self.extras.clone()
+        self.info.extras.clone()
     }
 }
-
 /// this would reset the newer cursor
 impl<T, E: Extras<T>> ToCursor<T, E> for Cursor<'_, T, E> {}
-
 impl<T, E: Extras<T>> AsRef<[T]> for Cursor<'_, T, E> {
     #[inline]
     fn as_ref(&self) -> &[T] {
         self.as_slice()
     }
 }
-
-impl<'s, T: 's> Cursor<'s, T, NoneExtras<T>> {
+impl<'s, T, E: Extras<T>> AsRef<Self> for Cursor<'s, T, E> {
     #[inline]
-    pub fn new(slice: &'s [T]) -> Self {
-        Cursor {
-            slice,
-            len: slice.len(),
-            pos: 0,
-            init: false,
-            backwards: false,
-            saved_pos: 0,
-            extras: Extras::new(),
-        }
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+impl<T, E: Extras<T>> AsMut<Self> for Cursor<'_, T, E> {
+    #[inline]
+    fn as_mut(&mut self) -> &mut Self {
+        self
     }
 }
 
-impl<T> Cursor<'_, T, NoneExtras<T>> {
+#[inline]
+fn cursor_new<T, EXTRAS: Extras<T>>(slice: &[T]) -> Cursor<T, EXTRAS> {
+    Cursor {
+        slice,
+        len: slice.len(),
+        info: CursorInfo::new(),
+        saved_info: CursorInfo::new(),
+    }
+}
+impl<'s, T: 's> Cursor<'s, T, NoneExtras<T>> {
+    #[inline]
+    pub fn new(slice: &'s [T]) -> Self {
+        cursor_new(slice)
+    }
     #[inline]
     pub fn new_with_extras<EXTRAS: Extras<T>>(slice: &[T]) -> Cursor<T, EXTRAS> {
-        Cursor {
-            slice,
-            len: slice.len(),
-            pos: 0,
-            init: false,
-            backwards: false,
-            saved_pos: 0,
-            extras: Extras::new(),
-        }
+        cursor_new(slice)
     }
 }
 
 impl<'s, T: 's, E: Extras<T>> Cursor<'s, T, E> {
+    // ------ private ------
     #[inline]
-    fn pos_checked_add(&self, n: usize) -> Option<usize> {
-        let pos = self.pos.checked_add(n)?;
-        if pos < self.len {
-            Some(pos)
-        } else {
-            None
-        }
+    fn set_init(&mut self, val: bool) {
+        self.info.init = val;
+    }
+    /// * WARNING: directly sets position. no effects.
+    #[inline]
+    pub fn unsafe_set_pos(&mut self, new_pos: usize) {
+        self.info.pos = new_pos;
     }
     #[inline]
-    fn set_to_left(&mut self) {
-        if !self.backwards() {
-            self.turnaround();
+    fn set_pos(&mut self, new_pos: usize) -> Option<&'s T> {
+        if new_pos == self.pos() {
+            return Some(self.current());
+        } else if new_pos >= self.len() {
+            return None;
         }
+
+        if !self.is_init() {
+            self.set_init(true);
+        }
+
+        self.info.pos = new_pos;
+
+        self.blush_extras();
+        Some(self.current())
     }
     #[inline]
-    fn set_to_right(&mut self) {
-        if self.backwards() {
-            self.turnaround();
-        }
+    fn blush_extras(&mut self) {
+        self.info.extras.change(self.current());
+    }
+
+    #[inline]
+    fn jump_to_added(&mut self, rhs: usize) -> Option<&'s T> {
+        self.jump_to_offset(rhs as isize)
     }
     #[inline]
-    fn set_pos(&mut self, pos: usize) {
-        let prev_pos = self.pos;
-        self.pos = pos;
-        if prev_pos != pos {
-            self.extras.change(self.current());
-        }
+    fn jump_to_subed(&mut self, rhs: usize) -> Option<&'s T> {
+        self.jump_to_offset(-(rhs as isize))
     }
+
+    // ------ public ------
     #[inline]
     pub fn unwrapped_next(&mut self) -> T
     where
@@ -114,115 +124,89 @@ impl<'s, T: 's, E: Extras<T>> Cursor<'s, T, E> {
     }
 }
 
-impl<'s, T: 's, E: Extras<T>> CursorTrait<'s, T> for Cursor<'s, T, E> {
+impl<'s, T, E: Extras<T>> Iterator for Cursor<'s, T, E> {
+    type Item = &'s T;
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.backwards() {
+            _ if !self.is_init() => {
+                self.set_init(true);
+                Some(self.current())
+            }
+            false => self.set_pos(self.pos().checked_add(1)?),
+            true => self.set_pos(self.pos().checked_sub(1)?),
+        }
+    }
+}
+
+impl<'s, T: 's, E: Extras<T>> CursorTrait<'s, T, E> for Cursor<'s, T, E> {
+    #[inline]
+    fn is_init(&self) -> bool {
+        self.info.init
+    }
+    #[inline]
+    fn backwards(&self) -> bool {
+        self.info.backwards
+    }
+    #[inline]
+    fn backwards_mut(&mut self) -> &mut bool {
+        &mut self.info.backwards
+    }
+    #[inline]
+    fn turnaround(&mut self) {
+        self.info.backwards = !self.info.backwards;
+    }
+    #[inline]
+    fn pos(&self) -> usize {
+        self.info.pos
+    }
     #[inline]
     fn len(&self) -> usize {
         self.len
     }
     #[inline]
-    fn pos(&self) -> usize {
-        self.pos
-    }
-    #[inline]
-    fn saved_pos(&self) -> usize {
-        self.saved_pos
-    }
-    #[inline]
-    fn current(&self) -> &'s T {
-        &self.slice[self.pos]
-    }
-    #[inline]
-    fn backwards(&self) -> bool {
-        self.backwards
-    }
-    #[inline]
-    fn reset(&mut self) {
-        self.pos = 0;
-        self.init = false;
-        self.backwards = false;
-        self.saved_pos = 0;
-        self.extras.reset();
-    }
-    #[inline]
-    fn save(&mut self) {
-        self.saved_pos = self.pos;
-    }
-    #[inline]
-    fn load_slice(&self) -> &'s [T] {
-        if self.saved_pos < self.pos {
-            &self.slice[self.saved_pos..self.pos.saturating_add(1)]
-        } else {
-            &self.slice[self.pos..self.saved_pos.saturating_add(1)]
-        }
+    fn is_empty(&self) -> bool {
+        self.len == 0
     }
     #[inline]
     fn as_slice(&self) -> &'s [T] {
         self.slice
     }
     #[inline]
-    fn as_remaining_slice(&self) -> &'s [T] {
-        if self.backwards {
-            &self.slice[..self.pos]
-        } else {
-            &self.slice[self.pos.saturating_add(1)..]
-        }
+    fn extras(&self) -> &E {
+        &self.info.extras
+    }
+
+    /// excepts saved_info.
+    #[inline]
+    fn reset(&mut self) {
+        self.info.reset();
     }
     #[inline]
-    fn as_preserved_slice(&self) -> &'s [T] {
-        if self.backwards {
-            &self.slice[self.pos.saturating_add(1)..]
-        } else {
-            &self.slice[..self.pos]
-        }
+    fn save(&mut self) {
+        self.saved_info = self.info.clone();
     }
     #[inline]
-    fn turnaround(&mut self) {
-        self.backwards = !self.backwards;
+    fn saved(&self) -> &CursorInfo<T, E> {
+        &self.saved_info
     }
     #[inline]
-    fn shift_first(&mut self) {
-        self.set_pos(0);
-        self.set_to_left();
+    fn load(&mut self) {
+        self.info = self.saved_info.clone();
     }
+
     #[inline]
-    fn shift_last(&mut self) {
-        self.set_pos(self.len - 1);
-        self.set_to_right();
-    }
-    #[inline]
-    fn left_shift(&mut self, n: usize) -> Option<&'s T> {
-        let mut n = n;
-        if !self.init {
-            self.init = true;
-            if n == 1 {
-                n = 0;
-                self.extras.change(self.current());
-            }
-        }
-        self.set_pos(self.pos.checked_sub(n)?);
-        self.set_to_left();
-        Some(self.current())
-    }
-    #[inline]
-    fn right_shift(&mut self, n: usize) -> Option<&'s T> {
-        let mut n = n;
-        if !self.init {
-            self.init = true;
-            if n == 1 {
-                n = 0;
-                self.extras.change(self.current());
-            }
-        }
-        self.set_pos(self.pos_checked_add(n)?);
-        self.set_to_right();
-        Some(self.current())
+    fn jump(&mut self, pos: usize) -> Option<&'s T> {
+        self.set_pos(pos)
     }
 }
+
+// ------- WARNING: isize -------
 
 impl<'s, T, E: Extras<T>> AddAssign<usize> for Cursor<'s, T, E> {
     #[inline]
     fn add_assign(&mut self, rhs: usize) {
-        self.right_shift(rhs);
+        self.jump_to_added(rhs);
     }
 }
 
@@ -230,7 +214,7 @@ impl<'s, T, E: Extras<T>> Add<usize> for Cursor<'s, T, E> {
     type Output = Option<&'s T>;
     #[inline]
     fn add(mut self, rhs: usize) -> Self::Output {
-        self.right_shift(rhs)
+        self.jump_to_added(rhs)
     }
 }
 
@@ -238,14 +222,14 @@ impl<'s, T, E: Extras<T>> Add<usize> for &mut Cursor<'s, T, E> {
     type Output = Option<&'s T>;
     #[inline]
     fn add(self, rhs: usize) -> Self::Output {
-        (*self).right_shift(rhs)
+        self.jump_to_added(rhs)
     }
 }
 
 impl<'s, T, E: Extras<T>> SubAssign<usize> for Cursor<'s, T, E> {
     #[inline]
     fn sub_assign(&mut self, rhs: usize) {
-        self.left_shift(rhs);
+        self.jump_to_subed(rhs);
     }
 }
 
@@ -253,7 +237,7 @@ impl<'s, T, E: Extras<T>> Sub<usize> for Cursor<'s, T, E> {
     type Output = Option<&'s T>;
     #[inline]
     fn sub(mut self, rhs: usize) -> Self::Output {
-        self.left_shift(rhs)
+        self.jump_to_subed(rhs)
     }
 }
 
@@ -261,24 +245,6 @@ impl<'s, T, E: Extras<T>> Sub<usize> for &mut Cursor<'s, T, E> {
     type Output = Option<&'s T>;
     #[inline]
     fn sub(self, rhs: usize) -> Self::Output {
-        (*self).left_shift(rhs)
-    }
-}
-
-impl<'s, T, E: Extras<T>> AsRef<Self> for Cursor<'s, T, E> {
-    #[inline]
-    fn as_ref(&self) -> &Self {
-        self
-    }
-}
-
-impl<'s, T, E: Extras<T>> Iterator for Cursor<'s, T, E> {
-    type Item = &'s T;
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        match self.backwards {
-            false => self.right_shift(1),
-            true => self.left_shift(1),
-        }
+        self.jump_to_subed(rhs)
     }
 }

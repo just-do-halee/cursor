@@ -34,7 +34,7 @@ fn example2() {
 #[inline]
 fn example3() {
     let mut cursor = StrCursor::new("test ascii only!");
-    for _ in cursor.raw_range() {
+    for _ in cursor.range() {
         let i = cursor.unwrapped_next();
         print!("{} ", i);
     }
@@ -43,7 +43,7 @@ fn example3() {
 #[inline]
 fn example4() {
     let mut cursor = StrCursor::new("test ascii only!");
-    for _ in cursor.raw_range() {
+    for _ in cursor.range() {
         cursor += 1;
         print!("{} ", cursor.current());
     }
@@ -52,9 +52,8 @@ fn example4() {
 #[inline]
 fn example5() {
     let mut cursor = StrCursor::new("test ascii only!");
-    for _ in cursor.raw_range() {
-        let i = &mut cursor + 1;
-        print!("{} ", i.unwrap());
+    while let Some(ch) = &mut cursor + 1 {
+        print!("{} ", ch);
     }
 }
 
@@ -62,8 +61,8 @@ fn example5() {
 fn example6() -> Option<char> {
     let mut cursor = StrCursor::new("test입니다. ^^");
 
-    cursor.right_shift(5)?;
-    cursor.left_shift(5)?;
+    cursor.next_to_offset(5)?;
+    cursor.next_to_offset(-5)?;
 
     cursor.turnaround();
     cursor.next()?;

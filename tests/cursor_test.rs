@@ -90,28 +90,33 @@ fn turnaround_works() {
 }
 
 #[test]
-fn shift_works() {
+fn jump_works() {
     let mut cursor = Cursor::new(SLICE);
-    let ch = *cursor.right_shift(6).unwrap();
+    let mut ch;
+
+    ch = *cursor.jump_to_offset(6).unwrap();
     assert_eq!(ch, SLICE[6]);
-    let ch = *cursor.left_shift(6).unwrap();
+    ch = *cursor.jump_to_offset(-6).unwrap();
     assert_eq!(ch, SLICE[0]);
 
-    cursor.shift_last();
+    ch = *cursor.jump_to_last();
 
-    let ch = *cursor.current();
     assert_eq!(ch, SLICE[SLICE.len() - 1]);
+    assert_eq!(ch, 10);
 
-    cursor.turnaround();
+    assert!(!cursor.backwards());
+    cursor.head_to_left();
+    assert!(cursor.backwards());
 
-    let ch = *cursor.next().unwrap();
+    ch = cursor.unwrapped_next();
     assert_eq!(ch, SLICE[SLICE.len() - 2]);
+    assert_eq!(ch, 9);
 }
 
 #[test]
 fn slice_works() {
     let mut cursor = Cursor::new(SLICE);
-    cursor.right_shift(4);
+    cursor.jump(4);
     assert_eq!(
         format!(
             "{:?}  {}  {:?}",
@@ -129,36 +134,57 @@ fn assign_works() {
     cursor += 5;
     assert_eq!(*cursor.current(), 6);
 
-    let i = &mut cursor - 5;
-    assert_eq!(*i.unwrap(), 1);
+    let i = &mut cursor - 4;
+    assert_eq!(*i.unwrap(), 2);
 
-    let j = cursor + 4;
-    assert_eq!(*j.unwrap(), 5);
+    let j = cursor + 5;
+    assert_eq!(*j.unwrap(), 7);
 }
 
 #[test]
 fn save_load_works() {
     let mut cursor = Cursor::new(SLICE);
     cursor.save();
-    assert_eq!(cursor.saved_pos(), 0);
+    assert_eq!(cursor.saved().pos, 0);
 
     cursor += 4;
     assert_eq!(*cursor.current(), 5);
 
-    assert_eq!(cursor.load_slice(), &[1, 2, 3, 4, 5]);
+    assert_eq!(cursor.as_slice_loaded(), &[1, 2, 3, 4, 5]);
 
     cursor.save();
-    assert_eq!(cursor.saved_pos(), 4);
+    assert_eq!(cursor.saved().pos, 4);
 
     cursor -= 3;
     assert_eq!(*cursor.current(), 2);
 
-    assert_eq!(cursor.load_slice(), &[2, 3, 4, 5]);
+    assert_eq!(cursor.as_slice_loaded(), &[2, 3, 4, 5]);
 }
 
 #[test]
 fn extras_works() {
     let mut cursor = Cursor::new_with_extras::<EvenCounter>(SLICE);
+    assert_eq!(cursor.to_extras().0, 0);
+    assert_eq!(cursor.saved().extras.0, 0);
+
+    assert_eq!(*cursor.next_to_last(), SLICE[SLICE.len() - 1]);
+    assert_eq!(cursor.to_extras().0, 5);
+    assert_eq!(cursor.saved().extras.0, 0);
+
+    cursor.save();
+    assert_eq!(cursor.saved().extras.0, 5);
+
+    cursor.reset();
+    assert_eq!(cursor.to_extras().0, 0);
+    assert_eq!(cursor.saved().extras.0, 5);
+
+    cursor.next_to_offset(3);
+    assert_eq!(cursor.to_extras().0, 1);
+    assert_eq!(cursor.saved().extras.0, 5);
+
+    cursor.save();
     cursor.next_to_last();
-    assert_eq!(cursor.into_extras().0, 5);
+
+    assert_eq!(cursor.to_extras().0, 5);
+    assert_eq!(cursor.saved().extras.0, 1);
 }

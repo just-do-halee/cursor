@@ -12,6 +12,7 @@ fn main() {
     example7();
     example8();
     example9();
+    example10();
     println!();
 }
 
@@ -44,7 +45,7 @@ fn example3() {
 fn example4() {
     let mut cursor = Cursor::new(&[1u8; 100]);
     for _ in cursor.range() {
-        cursor += 1;
+        cursor += 1; // this is jump
         print!("{} ", cursor.current());
     }
 }
@@ -53,16 +54,25 @@ fn example4() {
 fn example5() {
     let mut cursor = Cursor::new(&[1u8; 100]);
     for _ in cursor.range() {
-        let i = &mut cursor + 1;
-        print!("{} ", i.unwrap());
+        let ch = &mut cursor + 1; // this is jump
+        print!("{} ", ch.unwrap());
     }
 }
 
 #[inline]
-fn example6() -> Option<u8> {
+fn example6() {
     let mut cursor = Cursor::new(&[1u8; 100]);
-    cursor.right_shift(5)?;
-    cursor.left_shift(5)?;
+    // this is jump
+    while let Some(ch) = &mut cursor + 1 {
+        print!("{} ", ch);
+    }
+}
+
+#[inline]
+fn example7() -> Option<u8> {
+    let mut cursor = Cursor::new(&[1u8; 100]);
+    cursor.jump(5)?;
+    cursor.jump_to_offset(-5);
 
     cursor.turnaround();
     cursor.next()?;
@@ -74,7 +84,7 @@ fn example6() -> Option<u8> {
 }
 
 #[inline]
-fn example7() -> u8 {
+fn example8() -> u8 {
     let mut cursor = Cursor::new(&[1u8; 100]);
     cursor += 5;
     cursor -= 2;
@@ -84,7 +94,7 @@ fn example7() -> u8 {
 }
 
 #[inline]
-fn example8() -> u8 {
+fn example9() -> u8 {
     let mut cursor = Cursor::new(&[1u8; 100]);
     cursor += 10;
 
@@ -95,7 +105,7 @@ fn example8() -> u8 {
 }
 
 #[inline]
-fn example9() {
+fn example10() {
     let any_source = (1..1000).collect::<Vec<usize>>();
 
     let mut cursor = Cursor::new(any_source.as_slice());

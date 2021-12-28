@@ -109,32 +109,32 @@ fn example3() {
 fn example4() {
     let mut cursor = StrCursor::new(STRING);
     cursor.save();
-    assert_eq!(cursor.saved_pos(), 0);
+    assert_eq!(cursor.saved().pos, 0);
 
     cursor += 4;
     assert_eq!(cursor.current(), ' ');
 
-    assert_eq!(cursor.load_str(), "this ");
+    assert_eq!(cursor.as_str_loaded(), "this ");
 
     cursor.save();
-    assert_eq!(cursor.saved_pos(), 4);
+    assert_eq!(cursor.saved().pos, 4);
 
     cursor -= 2;
     assert_eq!(cursor.current(), 'i');
 
-    assert_eq!(cursor.load_str(), "is ");
+    assert_eq!(cursor.as_str_loaded(), "is ");
 
     let mut cursor = StrCursor::new("한글테스트^^");
     cursor.save();
-    assert_eq!(cursor.saved_pos(), 0);
+    assert_eq!(cursor.saved().pos, 0);
 
     cursor += 4;
     assert_eq!(cursor.current(), '트');
 
-    assert_eq!(cursor.load_str(), "한글테스트");
+    assert_eq!(cursor.as_str_loaded(), "한글테스트");
 
     cursor.save();
     cursor -= 2;
 
-    assert_eq!(cursor.load_str(), "테스트");
+    assert_eq!(cursor.as_str_loaded(), "테스트");
 }

@@ -22,12 +22,17 @@ A more free Rust-Iterator.
 
 ```toml
 [dependencies]
-cursor = "1.1.0"
+cursor = "2"
+# { version = "2", default-features = false } == no-std
 ```
 
 ---
 
-# [Example](./examples)
+<img src="./cursor_diagram.svg" alt="Cursor diagram">
+
+---
+
+# [Examples](./examples)
 
 ```rust
 use cursor::*;

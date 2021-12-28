@@ -5,19 +5,12 @@
 //!
 //! <a href="https://github.com/just-do-halee/cursor/tree/main/examples">Examples</a>
 
-use std::{
-    fmt,
-    marker::PhantomData,
-    mem,
-    ops::{Add, AddAssign, Range, Sub, SubAssign},
-    str,
-};
+#![cfg_attr(all(not(feature = "std"), not(test)), no_std)]
 
-mod extras;
+mod cmn;
+pub use cmn::*;
+
 mod traits;
-mod utf;
-
-pub use extras::*;
 pub use traits::*;
 
 mod cursors;
