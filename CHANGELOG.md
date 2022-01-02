@@ -1,3 +1,24 @@
+## 2.1.0 (January 2, 2022)
+
+### Release 2.1.0
+* Patched:
+    - change(&mut self, input: &char`, pos: usize`) in `Extras`
+* New Feature: 
+    - *.next_to_left()*
+    - *.next_to_right()*
+  * *If `next` or `jump` can effect the `Extras`.*
+    - *.noeffects()*
+    - *.noeffects_mut()*
+    - *.noeffects_on()*
+    - *.noefeects_off()*  
+  * *Bump until meets `fn` = `true`.*
+    - *.next_to_until(`fn`)*
+  * *Bump while `fn` = `true`.*
+    - *.next_to_while(`fn`)*
+  * *Cloning `saved().extras` to `self.extras()`.*
+    - *.to_range_extras()*
+---
+
 ## 2.0.0 (December 29, 2021)
 
 ### Release 2.0.0

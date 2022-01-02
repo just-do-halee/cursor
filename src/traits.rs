@@ -5,7 +5,7 @@ use super::*;
 pub trait Extras<Input> {
     fn new() -> Self;
     fn clone(&self) -> Self;
-    fn change(&mut self, input: &Input);
+    fn change(&mut self, input: &Input, pos: usize);
     fn reset(&mut self);
 }
 
@@ -53,6 +53,18 @@ where
         self.as_slice().is_empty()
     }
     fn is_init(&self) -> bool;
+
+    fn noeffects(&self) -> bool;
+    fn noeffects_mut(&mut self) -> &mut bool;
+    #[inline]
+    fn noeffects_on(&mut self) {
+        *self.noeffects_mut() = true;
+    }
+    #[inline]
+    fn noeffects_off(&mut self) {
+        *self.noeffects_mut() = false;
+    }
+
     fn backwards(&self) -> bool;
     fn backwards_mut(&mut self) -> &mut bool;
 
@@ -83,6 +95,12 @@ where
 
     fn pos(&self) -> usize;
     fn extras(&self) -> &E;
+
+    /// cloning `saved().extras` to `self.extras()`.
+    #[inline]
+    fn to_range_extras(&self) -> Range<E> {
+        self.saved().extras.clone()..self.extras().clone()
+    }
 
     fn reset(&mut self);
     fn save(&mut self);
@@ -316,6 +334,38 @@ where
         while self.next().is_some() {}
         self.current()
     }
+    #[inline]
+    fn next_to_left(&mut self) -> Option<&'s T> {
+        self.head_to_left();
+        self.next()
+    }
+    #[inline]
+    fn next_to_right(&mut self) -> Option<&'s T> {
+        self.head_to_right();
+        self.next()
+    }
+    /// bump until meets f() = `true`.
+    #[inline]
+    fn next_to_until(&mut self, f: fn(&T) -> bool) -> &'s T {
+        #[allow(clippy::while_let_on_iterator)]
+        while let Some(item) = self.next() {
+            if f(item) {
+                break;
+            }
+        }
+        self.current()
+    }
+    /// bump while f() = `true`.
+    #[inline]
+    fn next_to_while(&mut self, f: fn(&T) -> bool) -> &'s T {
+        #[allow(clippy::while_let_on_iterator)]
+        while let Some(item) = self.next() {
+            if !f(item) {
+                break;
+            }
+        }
+        self.current()
+    }
     /// bump until meets saved pos.
     #[inline]
     fn next_to_load(&mut self) -> &'s T {
@@ -384,6 +434,18 @@ where
     }
 
     fn is_init(&self) -> bool;
+
+    fn noeffects(&self) -> bool;
+    fn noeffects_mut(&mut self) -> &mut bool;
+    #[inline]
+    fn noeffects_on(&mut self) {
+        *self.noeffects_mut() = true;
+    }
+    #[inline]
+    fn noeffects_off(&mut self) {
+        *self.noeffects_mut() = false;
+    }
+
     fn backwards(&self) -> bool;
 
     fn turnaround(&mut self);
@@ -414,6 +476,12 @@ where
     fn char_start_pos(&self) -> usize;
 
     fn extras(&self) -> &E;
+
+    /// cloning `saved().extras` to `self.extras()`.
+    #[inline]
+    fn to_range_extras(&self) -> Range<E> {
+        self.saved().extras.clone()..self.extras().clone()
+    }
 
     fn reset(&mut self);
     fn save(&mut self);
@@ -541,7 +609,11 @@ where
                 };
                 utf::from_utf8_unchecked(&self.as_bytes()[saved_pos..curr_pos + 1])
             }
-            Ordering::Equal => "",
+            Ordering::Equal => utf::from_utf8_unchecked(if curr_backwards {
+                &self.as_bytes()[curr_pos..curr_char_start_pos + 1]
+            } else {
+                &self.as_bytes()[curr_char_start_pos..curr_pos + 1]
+            }),
             Ordering::Less => {
                 let saved_pos = if saved_backwards {
                     saved_char_start_pos
@@ -750,6 +822,38 @@ where
     fn next_to_last(&mut self) -> char {
         self.head_to_right();
         while self.next().is_some() {}
+        self.current()
+    }
+    #[inline]
+    fn next_to_left(&mut self) -> Option<char> {
+        self.head_to_left();
+        self.next()
+    }
+    #[inline]
+    fn next_to_right(&mut self) -> Option<char> {
+        self.head_to_right();
+        self.next()
+    }
+    /// bump until meets f() = `true`.
+    #[inline]
+    fn next_to_until(&mut self, f: fn(char) -> bool) -> char {
+        #[allow(clippy::while_let_on_iterator)]
+        while let Some(ch) = self.next() {
+            if f(ch) {
+                break;
+            }
+        }
+        self.current()
+    }
+    /// bump while f() = `true`.
+    #[inline]
+    fn next_to_while(&mut self, f: fn(char) -> bool) -> char {
+        #[allow(clippy::while_let_on_iterator)]
+        while let Some(ch) = self.next() {
+            if !f(ch) {
+                break;
+            }
+        }
         self.current()
     }
     /// bump until meets saved pos.

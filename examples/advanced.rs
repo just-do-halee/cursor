@@ -30,7 +30,7 @@ impl Extras<u8> for Counter {
     fn reset(&mut self) {
         self._reset()
     }
-    fn change(&mut self, input: &u8) {
+    fn change(&mut self, input: &u8, _pos: usize) {
         if input % 2 == 0 {
             self.0 += 1;
         }
@@ -47,7 +47,7 @@ impl Extras<char> for Counter {
     fn reset(&mut self) {
         self._reset()
     }
-    fn change(&mut self, input: &char) {
+    fn change(&mut self, input: &char, _pos: usize) {
         if *input == ' ' {
             self.0 += 1;
         }

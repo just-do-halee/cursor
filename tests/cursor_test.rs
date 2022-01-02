@@ -17,7 +17,7 @@ impl Extras<u8> for EvenCounter {
     fn reset(&mut self) {
         self.0 = 0;
     }
-    fn change(&mut self, input: &u8) {
+    fn change(&mut self, input: &u8, _pos: usize) {
         if input % 2 == 0 {
             self.0 += 1;
         }

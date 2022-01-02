@@ -1,6 +1,6 @@
 [package]
 name = "cursor"
-version = "2.0.0"
+version = "2.1.0"
 authors = ["just-do-halee <just.do.halee@gmail.com>"]
 homepage = "https://github.com/just-do-halee/cursor"
 repository = "https://github.com/just-do-halee/cursor"
@@ -19,5 +19,8 @@ edition = "2021"
 [features]
 default = [ "std" ]
 std = []
+
+[dev-dependencies]
+derive-new = "0.5"
 
 [dependencies]

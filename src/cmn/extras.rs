@@ -14,7 +14,7 @@ impl<T> Extras<T> for NoneExtras<T> {
         NoneExtras::new()
     }
     #[inline]
-    fn change(&mut self, _: &T) {}
+    fn change(&mut self, _: &T, _: usize) {}
     #[inline]
     fn reset(&mut self) {}
 }

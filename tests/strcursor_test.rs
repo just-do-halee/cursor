@@ -4,17 +4,6 @@ use cursor::*;
 
 const STRING: &str = "this is test. 안녕하세요. 이것은 #&*@( 테스트입니다. ^^ thanks.";
 
-// #[test]
-// fn str_works() {
-//     let mut cursor = StrCursor::new(STRING);
-//     assert_eq!((cursor.as_mut() + 3).unwrap(), 's');
-//     cursor -= 2;
-//     assert_eq!(cursor.current(), 'h');
-//     cursor += 8;
-//     assert_eq!(cursor.current(), 'e');
-//     assert_eq!((cursor - 8).unwrap(), 'h');
-// }
-
 #[derive(Debug, Default)]
 struct SpaceCounter(pub usize);
 
@@ -28,7 +17,7 @@ impl Extras<char> for SpaceCounter {
     fn reset(&mut self) {
         self.0 = 0;
     }
-    fn change(&mut self, input: &char) {
+    fn change(&mut self, input: &char, _pos: usize) {
         if *input == ' ' {
             self.0 += 1;
         }

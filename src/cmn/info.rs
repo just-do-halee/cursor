@@ -8,6 +8,7 @@ pub struct CursorInfo<T, E: Extras<T> = NoneExtras<T>> {
     pub backwards: bool,
     pub pos: usize,
     pub extras: E,
+    pub noeffects: bool,
     _marker: PhantomData<T>,
 }
 impl<T, E: Extras<T>> Default for CursorInfo<T, E> {
@@ -18,6 +19,7 @@ impl<T, E: Extras<T>> Default for CursorInfo<T, E> {
             backwards: false,
             pos: 0,
             extras: Extras::new(),
+            noeffects: false,
             _marker: PhantomData,
         }
     }
@@ -30,6 +32,7 @@ impl<T, E: Extras<T>> Clone for CursorInfo<T, E> {
             backwards: self.backwards,
             pos: self.pos,
             extras: self.extras.clone(),
+            noeffects: false,
             _marker: PhantomData,
         }
     }
@@ -46,6 +49,7 @@ impl<T, E: Extras<T>> CursorInfo<T, E> {
         self.backwards = false;
         self.pos = 0;
         self.extras.reset();
+        self.noeffects = false;
     }
 }
 
@@ -58,6 +62,7 @@ pub struct StrCursorInfo<E: Extras<char> = NoneExtras<char>> {
     pub extras: E,
     pub char_start_pos: usize,
     pub current: char,
+    pub noeffects: bool,
 }
 impl<E: Extras<char>> Default for StrCursorInfo<E> {
     #[inline]
@@ -68,6 +73,7 @@ impl<E: Extras<char>> Default for StrCursorInfo<E> {
             extras: Extras::new(),
             char_start_pos: 0,
             current: EOF_CHAR,
+            noeffects: false,
         }
     }
 }
@@ -80,6 +86,7 @@ impl<E: Extras<char>> Clone for StrCursorInfo<E> {
             extras: self.extras.clone(),
             char_start_pos: self.char_start_pos,
             current: self.current,
+            noeffects: self.noeffects,
         }
     }
 }
@@ -94,6 +101,8 @@ impl<E: Extras<char>> StrCursorInfo<E> {
         self.inner.reset();
         self.pos = 0;
         self.extras.reset();
+        self.char_start_pos = 0;
         self.current = EOF_CHAR;
+        self.noeffects = false;
     }
 }

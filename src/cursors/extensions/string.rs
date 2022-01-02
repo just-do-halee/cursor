@@ -120,7 +120,9 @@ impl<'s, E: Extras<char>> StrCursor<'s, E> {
     }
     #[inline]
     fn blush_extras(&mut self) {
-        self.info.extras.change(&self.current());
+        if !self.noeffects() {
+            self.info.extras.change(&self.current(), self.pos());
+        }
     }
 
     #[inline]
@@ -173,6 +175,15 @@ impl<'s, E: Extras<char>> StrCursorTrait<'s, E> for StrCursor<'s, E> {
     #[inline]
     fn is_init(&self) -> bool {
         self.current() != EOF_CHAR
+    }
+    /// if `next` or `jump` can effect the [`Extras`](Extras).
+    #[inline]
+    fn noeffects(&self) -> bool {
+        self.info.noeffects
+    }
+    #[inline]
+    fn noeffects_mut(&mut self) -> &mut bool {
+        &mut self.info.noeffects
     }
     #[inline]
     fn backwards(&self) -> bool {
