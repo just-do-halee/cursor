@@ -13,6 +13,7 @@ fn main() {
     example8();
     example9();
     example10();
+    // TODO: more examples
     println!();
 }
 
@@ -45,7 +46,7 @@ fn example3() {
 fn example4() {
     let mut cursor = Cursor::new(&[1u8; 100]);
     for _ in cursor.range() {
-        cursor += 1; // this is jump
+        cursor += 1; // this is next
         print!("{} ", cursor.current());
     }
 }
@@ -54,7 +55,7 @@ fn example4() {
 fn example5() {
     let mut cursor = Cursor::new(&[1u8; 100]);
     for _ in cursor.range() {
-        let ch = &mut cursor + 1; // this is jump
+        let ch = &mut cursor + 1; // this is next
         print!("{} ", ch.unwrap());
     }
 }
@@ -62,7 +63,7 @@ fn example5() {
 #[inline]
 fn example6() {
     let mut cursor = Cursor::new(&[1u8; 100]);
-    // this is jump
+    // this is next
     while let Some(ch) = &mut cursor + 1 {
         print!("{} ", ch);
     }
@@ -71,8 +72,8 @@ fn example6() {
 #[inline]
 fn example7() -> Option<u8> {
     let mut cursor = Cursor::new(&[1u8; 100]);
-    cursor.jump(5)?;
-    cursor.jump_to_offset(-5);
+    cursor.jump(5)?; // == cursor += 5
+    cursor.jump_to_offset(-5); // == cursor -= 5
 
     cursor.turnaround();
     cursor.next()?;
@@ -86,9 +87,9 @@ fn example7() -> Option<u8> {
 #[inline]
 fn example8() -> u8 {
     let mut cursor = Cursor::new(&[1u8; 100]);
-    cursor += 5;
-    cursor -= 2;
-    cursor += 1;
+    cursor += 5; // this is jump
+    cursor -= 2; //
+    cursor += 1; // this is next
 
     cursor.current_deref()
 }
@@ -96,10 +97,10 @@ fn example8() -> u8 {
 #[inline]
 fn example9() -> u8 {
     let mut cursor = Cursor::new(&[1u8; 100]);
-    cursor += 10;
+    cursor += 10; // this is jump
 
-    let _ = &mut cursor + (5 - 2 + 1);
-    let _ = &mut cursor - 1;
+    let _ = &mut cursor + (5 - 2 + 1); // this is jump
+    let _ = &mut cursor - 1; // this is next
 
     *(cursor - 1).unwrap()
 }
@@ -113,7 +114,7 @@ fn example10() {
     let mut tough_rate = 0f64;
 
     for _ in cursor.range() {
-        cursor += 1;
+        cursor += 1; // this is next
 
         let n = cursor.current_deref();
 
