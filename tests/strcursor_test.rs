@@ -7,6 +7,12 @@ const STRING: &str = "this is test. 안녕하세요. 이것은 #&*@( 테스트�
 #[derive(Debug, Default)]
 struct SpaceCounter(pub usize);
 
+impl SpaceCounter {
+    pub fn _reset(&mut self) {
+        self.0 = 0;
+    }
+}
+
 impl Extras<char> for SpaceCounter {
     fn new() -> Self {
         SpaceCounter::default()
@@ -15,7 +21,7 @@ impl Extras<char> for SpaceCounter {
         SpaceCounter(self.0)
     }
     fn reset(&mut self) {
-        self.0 = 0;
+        self._reset();
     }
     fn change(&mut self, input: &char, _pos: usize) {
         if *input == ' ' {
@@ -187,5 +193,8 @@ fn save_load_works() {
 fn extras_works() {
     let mut cursor = StrCursor::new_with_extras::<SpaceCounter>(STRING);
     cursor.next_to_last();
-    assert_eq!(cursor.into_extras().0, 8);
+    assert_eq!(cursor.to_extras().0, 8);
+
+    cursor.extras_mut()._reset();
+    assert_eq!(cursor.into_extras().0, 0);
 }

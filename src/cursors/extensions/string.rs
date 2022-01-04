@@ -244,6 +244,10 @@ impl<'s, E: Extras<char>> StrCursorTrait<'s, E> for StrCursor<'s, E> {
         &self.info.extras
     }
     #[inline]
+    fn extras_mut(&mut self) -> &mut E {
+        &mut self.info.extras
+    }
+    #[inline]
     fn current(&self) -> char {
         self.info.current
     }

@@ -95,6 +95,7 @@ where
 
     fn pos(&self) -> usize;
     fn extras(&self) -> &E;
+    fn extras_mut(&mut self) -> &mut E;
 
     /// cloning `saved().extras` to `self.extras()`.
     #[inline]
@@ -385,6 +386,18 @@ where
             }
         }
     }
+    /// next_back() `without turnaround()`
+    #[inline]
+    fn prev(&mut self) -> Option<&'s T> {
+        let out = if self.backwards() {
+            self.next_to_right()
+        } else {
+            // if forwards
+            self.next_to_left()
+        };
+        self.turnaround();
+        out
+    }
     /// bump until meets saved pos.
     #[inline]
     fn next_to_offset_cycle(&mut self, offset: isize) -> &'s T {
@@ -476,6 +489,7 @@ where
     fn char_start_pos(&self) -> usize;
 
     fn extras(&self) -> &E;
+    fn extras_mut(&mut self) -> &mut E;
 
     /// cloning `saved().extras` to `self.extras()`.
     #[inline]
@@ -874,6 +888,18 @@ where
                 self.jump_to_first()
             }
         }
+    }
+    /// next_back() `without turnaround()`
+    #[inline]
+    fn prev(&mut self) -> Option<char> {
+        let out = if self.backwards() {
+            self.next_to_right()
+        } else {
+            // if forwards
+            self.next_to_left()
+        };
+        self.turnaround();
+        out
     }
     /// bump until meets saved pos.
     #[inline]

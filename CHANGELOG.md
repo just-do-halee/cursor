@@ -1,3 +1,13 @@
+## 2.2.0 (January 2, 2022)
+
+### Release 2.2.0
+* New Feature: 
+  * cursor ***`.prev()`*** : *next_back() without turnaround().*
+  * cursor ***`.extras_mut()`*** : *gets mutable extras.*
+  
+
+---
+
 ## 2.1.0 (January 2, 2022)
 
 ### Release 2.1.0

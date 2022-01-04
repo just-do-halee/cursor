@@ -7,25 +7,6 @@ use std::str::FromStr;
 
 derive_debug_partials! {
 
-    #[derive(Default, PartialOrd, Ord, Clone, Copy, new)]
-    struct Offset {
-        pub pos: usize,
-        pub line: usize,
-        pub column: usize,
-    }
-
-    #[derive(Default, Clone, Copy, new)]
-    struct Span {
-        pub start: Offset,
-        pub end: Offset,
-    }
-
-    #[derive(Clone, new)]
-    struct SourceChunk<'s> {
-        pub source: &'s str, // whole mass
-        span: Span,
-    }
-
     #[derive(Clone, Copy)]
     enum TokenKind {
         // Single-character tokens.
@@ -90,33 +71,23 @@ derive_debug_partials! {
         None,
     }
 
-
 }
 
-#[derive(PartialEq, Eq, Clone, new)]
-struct Token<'s> {
-    pub kind: TokenKind,
-    pub lexeme: SourceChunk<'s>,
-    pub literal: Object,
-}
+derive_debug_partials! {
 
-type Tokens<'s> = Vec<Token<'s>>;
-
-impl<'s> fmt::Debug for Token<'s> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Token")
-            .field("kind", &self.kind)
-            .field("lexeme", &self.lexeme.as_str())
-            .field("literal", &self.literal)
-            .finish()
+    #[derive(Default, PartialOrd, Ord, Clone, Copy, new)]
+    struct Offset {
+        pub pos: usize,
+        pub line: usize,
+        pub column: usize,
     }
-}
 
-impl<'s> SourceChunk<'s> {
-    pub fn as_str(&self) -> &'s str {
-        let Span { start, end } = self.span;
-        &self.source[start.pos..end.pos.saturating_add(1)]
+    #[derive(Default, Clone, Copy, new)]
+    struct Span {
+        pub start: Offset,
+        pub end: Offset,
     }
+
 }
 
 impl From<Range<LexerExtras>> for Span {
@@ -125,6 +96,18 @@ impl From<Range<LexerExtras>> for Span {
             start: v.start.offset,
             end: v.end.offset,
         }
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Copy, new)]
+struct SourceChunk<'s> {
+    pub source: &'s str, // whole mass
+    span: Span,
+}
+
+impl<'s> fmt::Debug for SourceChunk<'s> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self.as_str())
     }
 }
 
@@ -137,10 +120,37 @@ impl<'s> From<&StrCursor<'s, LexerExtras>> for SourceChunk<'s> {
     }
 }
 
+impl<'s> SourceChunk<'s> {
+    pub fn as_str(&self) -> &'s str {
+        let Span { start, end } = self.span;
+        &self.source[start.pos..end.pos.saturating_add(1)]
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, new)]
+struct Token<'s> {
+    pub kind: TokenKind,
+    pub lexeme: SourceChunk<'s>,
+    pub literal: Object,
+}
+
+type Tokens<'s> = Vec<Token<'s>>;
+
+// cursor
+
 #[derive(Default, Debug)]
 struct LexerExtras {
     prev_offset: Offset,
     offset: Offset,
+}
+
+impl LexerExtras {
+    pub fn load(&mut self) {
+        self.offset = self.prev_offset;
+    }
+    pub fn save(&mut self) {
+        self.prev_offset = self.offset;
+    }
 }
 
 impl Extras<char> for LexerExtras {
@@ -154,14 +164,15 @@ impl Extras<char> for LexerExtras {
         }
     }
     fn reset(&mut self) {
-        self.prev_offset = Offset::default();
-        self.offset = Offset::default();
+        let def = Offset::default();
+        self.prev_offset = def;
+        self.offset = def;
     }
     fn change(&mut self, input: &char, pos: usize) {
-        if self.offset.pos > pos {
-            self.offset = self.prev_offset;
+        if pos < self.offset.pos {
+            self.load(); // == undo
         } else {
-            self.prev_offset = self.offset;
+            self.save();
             self.offset.pos = pos;
             match *input {
                 '\n' => {
@@ -195,10 +206,6 @@ fn example1() {
             }"#,
     );
     let mut tokens = Tokens::new();
-    let undo = |cursor: &mut StrCursor<LexerExtras>| {
-        cursor.next_to_left();
-        cursor.head_to_right();
-    };
 
     while let Some(c) = cursor.next() {
         match c {
@@ -226,7 +233,7 @@ fn example1() {
                 // numbers
                 cursor.save();
                 cursor.next_to_while(|c| c.is_digit(10));
-                undo(&mut cursor); // Undo
+                cursor.prev();
                 let literal = i32::from_str(cursor.as_str_loaded()).unwrap();
                 tokens.push(Token::new(
                     TokenKind::Number,
@@ -238,7 +245,7 @@ fn example1() {
                 // ident
                 cursor.save();
                 cursor.next_to_while(|c| matches!(c, 'a'..='z' | 'A'..='Z' | '0'..='9' | '_'));
-                undo(&mut cursor); // Undo
+                cursor.prev();
                 let literal = cursor.as_str_loaded().to_string();
                 tokens.push(Token::new(
                     TokenKind::Identifier,

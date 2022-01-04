@@ -187,6 +187,10 @@ impl<'s, T: 's, E: Extras<T>> CursorTrait<'s, T, E> for Cursor<'s, T, E> {
     fn extras(&self) -> &E {
         &self.info.extras
     }
+    #[inline]
+    fn extras_mut(&mut self) -> &mut E {
+        &mut self.info.extras
+    }
 
     /// excepts saved_info.
     #[inline]

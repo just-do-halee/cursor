@@ -64,4 +64,4 @@ fn example9() {
 }
 ```
 
-#### *Please check the [examples folder](./examples) for detailed features. There are more than you can imagine.*
+#### *Please check the [examples folder](./examples) for detailed features.*

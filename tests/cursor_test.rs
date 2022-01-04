@@ -7,6 +7,12 @@ const SLICE: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 #[derive(Debug, Default)]
 struct EvenCounter(pub usize);
 
+impl EvenCounter {
+    pub fn _reset(&mut self) {
+        self.0 = 0;
+    }
+}
+
 impl Extras<u8> for EvenCounter {
     fn new() -> Self {
         EvenCounter::default()
@@ -15,7 +21,7 @@ impl Extras<u8> for EvenCounter {
         EvenCounter(self.0)
     }
     fn reset(&mut self) {
-        self.0 = 0;
+        self._reset();
     }
     fn change(&mut self, input: &u8, _pos: usize) {
         if input % 2 == 0 {
@@ -187,4 +193,7 @@ fn extras_works() {
 
     assert_eq!(cursor.to_extras().0, 5);
     assert_eq!(cursor.saved().extras.0, 1);
+
+    cursor.extras_mut()._reset();
+    assert_eq!(cursor.to_extras().0, 0);
 }
