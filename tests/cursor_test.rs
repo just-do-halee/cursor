@@ -197,3 +197,25 @@ fn extras_works() {
     cursor.extras_mut()._reset();
     assert_eq!(cursor.to_extras().0, 0);
 }
+
+#[test]
+fn next_to_until() {
+    let mut cursor = Cursor::new_with_extras::<EvenCounter>(SLICE);
+    let c = cursor.next_to_until(|&i| i == 5);
+    assert_eq!(c, Some(&5));
+    let c = cursor.next_to_until(|&i| i == 10);
+    assert_eq!(c, Some(&10));
+    let c = cursor.next_to_until(|&i| i == 11);
+    assert_eq!(c, None);
+}
+
+#[test]
+fn next_to_while() {
+    let mut cursor = Cursor::new_with_extras::<EvenCounter>(SLICE);
+    let c = cursor.next_to_while(|&i| i <= 4);
+    assert_eq!(c, Some(&5));
+    let c = cursor.next_to_while(|&i| i <= 9);
+    assert_eq!(c, Some(&10));
+    let c = cursor.next_to_while(|&i| i <= 10);
+    assert_eq!(c, None);
+}

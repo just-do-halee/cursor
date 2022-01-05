@@ -347,25 +347,15 @@ where
     }
     /// bump until meets f() = `true`.
     #[inline]
-    fn next_to_until(&mut self, f: fn(&T) -> bool) -> &'s T {
-        #[allow(clippy::while_let_on_iterator)]
-        while let Some(item) = self.next() {
-            if f(item) {
-                break;
-            }
-        }
-        self.current()
+    fn next_to_until(&mut self, f: fn(&T) -> bool) -> Option<&'s T> {
+        while !f(self.next()?) {}
+        Some(self.current())
     }
     /// bump while f() = `true`.
     #[inline]
-    fn next_to_while(&mut self, f: fn(&T) -> bool) -> &'s T {
-        #[allow(clippy::while_let_on_iterator)]
-        while let Some(item) = self.next() {
-            if !f(item) {
-                break;
-            }
-        }
-        self.current()
+    fn next_to_while(&mut self, f: fn(&T) -> bool) -> Option<&'s T> {
+        while f(self.next()?) {}
+        Some(self.current())
     }
     /// bump until meets saved pos.
     #[inline]
@@ -850,25 +840,15 @@ where
     }
     /// bump until meets f() = `true`.
     #[inline]
-    fn next_to_until(&mut self, f: fn(char) -> bool) -> char {
-        #[allow(clippy::while_let_on_iterator)]
-        while let Some(ch) = self.next() {
-            if f(ch) {
-                break;
-            }
-        }
-        self.current()
+    fn next_to_until(&mut self, f: fn(char) -> bool) -> Option<char> {
+        while !f(self.next()?) {}
+        Some(self.current())
     }
     /// bump while f() = `true`.
     #[inline]
-    fn next_to_while(&mut self, f: fn(char) -> bool) -> char {
-        #[allow(clippy::while_let_on_iterator)]
-        while let Some(ch) = self.next() {
-            if !f(ch) {
-                break;
-            }
-        }
-        self.current()
+    fn next_to_while(&mut self, f: fn(char) -> bool) -> Option<char> {
+        while f(self.next()?) {}
+        Some(self.current())
     }
     /// bump until meets saved pos.
     #[inline]

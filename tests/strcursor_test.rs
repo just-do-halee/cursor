@@ -2,7 +2,7 @@
 
 use cursor::*;
 
-const STRING: &str = "this is test. 안녕하세요. 이것은 #&*@( 테스트입니다. ^^ thanks.";
+const STRING: &str = "this is test. 안녕하세요. 이것은 #&*@( 테스트입니다. ^^ thanks!";
 
 #[derive(Debug, Default)]
 struct SpaceCounter(pub usize);
@@ -133,7 +133,7 @@ fn str_works() {
             cursor.current(),
             cursor.as_remaining_str()
         ),
-        "this is test. 안  녕  하세요. 이것은 #&*@( 테스트입니다. ^^ thanks."
+        "this is test. 안  녕  하세요. 이것은 #&*@( 테스트입니다. ^^ thanks!"
     );
 }
 
@@ -197,4 +197,26 @@ fn extras_works() {
 
     cursor.extras_mut()._reset();
     assert_eq!(cursor.into_extras().0, 0);
+}
+
+#[test]
+fn next_to_until() {
+    let mut cursor = StrCursor::new_with_extras::<SpaceCounter>(STRING);
+    let c = cursor.next_to_until(|c| c == 's');
+    assert_eq!(c, Some('s'));
+    let c = cursor.next_to_until(|c| c == '이');
+    assert_eq!(c, Some('이'));
+    let c = cursor.next_to_until(|c| c == '쀍');
+    assert_eq!(c, None);
+}
+
+#[test]
+fn next_to_while() {
+    let mut cursor = StrCursor::new_with_extras::<SpaceCounter>(STRING);
+    let c = cursor.next_to_while(|c| "this is test.".contains(c));
+    assert_eq!(c, Some('안'));
+    let c = cursor.next_to_while(|c| matches!(c, '안' | '녕' | '하' | '세'));
+    assert_eq!(c, Some('요'));
+    cursor.next_to_while(|c| c != '!');
+    assert_eq!(cursor.next(), None);
 }

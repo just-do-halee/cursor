@@ -1,9 +1,20 @@
+## 2.3.0 (January 6, 2022)
+
+### Release 2.3.0
+* Patched:
+  - *Adding `Option` of return value*.
+  - cursor ***`.next_to_until(`fn`)`*** -> `Option<T>`
+  - cursor ***`.next_to_while(`fn`)`*** -> `Option<T>`
+  
+
+---
+
 ## 2.2.0 (January 2, 2022)
 
 ### Release 2.2.0
 * New Feature: 
-  * cursor ***`.prev()`*** : *next_back() without turnaround().*
-  * cursor ***`.extras_mut()`*** : *gets mutable extras.*
+  - cursor ***`.prev()`*** : *next_back() without turnaround().*
+  - cursor ***`.extras_mut()`*** : *gets mutable extras.*
   
 
 ---
