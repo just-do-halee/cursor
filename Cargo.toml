@@ -21,6 +21,11 @@ default = [ "std" ]
 std = []
 
 [dev-dependencies]
+criterion = { version = "0.3", features = ["html_reports"] }
 derive-new = "0.5"
+
+[[bench]]
+name = "normal"
+harness = false
 
 [dependencies]
